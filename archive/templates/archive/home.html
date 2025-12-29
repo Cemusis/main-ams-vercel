@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Archive Management System</title>
+    <link rel="stylesheet" href="{% static 'archive/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/home.css' %}"> 
+</head>
+<body class="home-page">
+    <header class="header">
+        <div class="logo-text">AMS</div>
+        <div class="user-info">
+            <span>{{ user.full_name }} ({{ user.role }})</span>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <nav>
+                <a href="{% url 'home' %}" class="nav-link active"> Home</a>
+                <a href="{% url 'search' %}" class="nav-link"> Search</a>
+                <a href="{% url 'view_all_records' %}" class="nav-link"> All archive records</a>
+                
+                {% if user.role == 'Admin' or user.role == 'Secretary' %}
+                    <a href="{% url 'add_record' %}" class="nav-link"> Add Record</a>
+                {% endif %}
+                
+                <a href="{% url 'borrow_return' %}" class="nav-link"> Borrow/Return</a>
+                
+                {% if user.role == 'Admin' %}
+                    <a href="{% url 'manage_users' %}" class="nav-link"> Manage Users</a>
+                {% endif %}
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <h2>Welcome, {{ user.full_name }}!</h2>
+            
+<!-- Admin dashboard - CLICKABLE STATS -->
+{% if user.role == 'Admin' %}
+    <div class="stats-grid">
+        <a href="{% url 'view_all_records' %}" class="stat-card clickable">
+            <h3>Total Records</h3>
+            <p class="stat-number">{{ total_records }}</p>
+        </a>
+        <a href="{% url 'filter_available' %}" class="stat-card clickable">
+            <h3>Available Records</h3>
+            <p class="stat-number">{{ available_records }}</p>
+        </a>
+        <a href="{% url 'view_logs' %}" class="stat-card clickable">
+            <h3>Recent Activity</h3>
+            <p style="font-size: 14px; color: #666; margin: 0;">{{ recent_activity }}</p>
+        </a>
+    </div>
+            
+            <!-- Secretary dashboard - CLICKABLE STATS -->
+            {% elif user.role == 'Secretary' %}
+                <div class="stats-grid">
+                    <a href="{% url 'filter_borrowed' %}" class="stat-card clickable">
+                        <h3>Active Borrowings</h3>
+                        <p class="stat-number">{{ active_borrowings }}</p>
+                    </a>
+                    <a href="{% url 'filter_new_month' %}" class="stat-card clickable">
+                        <h3>New This Month</h3>
+                        <p class="stat-number">{{ new_this_month }}</p>
+                    </a>
+                </div>
+            
+            <!-- Lecturer dashboard -->
+            {% else %}
+                <div class="stats-grid">
+                    <a href="{% url 'view_all_records' %}" class="stat-card clickable">
+                        <h3>Total Records</h3>
+                        <p class="stat-number">{{ total_records }}</p>
+                    </a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+    
+    {% include 'archive/base_footer.html' %}
+</body>
+</html>

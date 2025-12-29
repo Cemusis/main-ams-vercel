@@ -1,0 +1,149 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borrow/Return - Archive Management System</title>
+    <link rel="stylesheet" href="{% static 'archive/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/search.css' %}">
+</head>
+<body class="home-page">
+    <header class="header">
+        <div class="logo-text"> AMS</div>
+        <div class="user-info">
+            <span>{{ user.full_name }} ({{ user.role }})</span>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <aside class="sidebar">
+            <nav>
+                <a href="{% url 'home' %}" class="nav-link"> Home</a>
+                <a href="{% url 'search' %}" class="nav-link"> Search</a>
+                <a href="{% url 'view_all_records' %}" class="nav-link"> All archive records</a>
+                
+                {% if user.role == 'Admin' or user.role == 'Secretary' %}
+                    <a href="{% url 'add_record' %}" class="nav-link"> Add Record</a>
+                {% endif %}
+                
+                <a href="{% url 'borrow_return' %}" class="nav-link active"> Borrow/Return</a>
+                
+                {% if user.role == 'Admin' %}
+                    <a href="{% url 'manage_users' %}" class="nav-link"> Manage Users</a>
+                {% endif %}
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <h2>Borrow & Return Records</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                        <button class="close-alert" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- ACTIVE BORROWINGS SECTION -->
+            <div class="results-container" style="margin-bottom: 30px;">
+                <h3> Active Borrowings ({{ active_borrowings.count }})</h3>
+                
+                {% if active_borrowings %}
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>File Code</th>
+                            <th>Course</th>
+                            <th>Borrowed By</th>
+                            <th>Borrowed Date</th>
+                            <th>Days Out</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in active_borrowings %}
+                        <tr>
+                            <td><strong>{{ transaction.record.file_code }}</strong></td>
+                            <td>{{ transaction.record.course_code }} - {{ transaction.record.course_name }}</td>
+                            <td>{{ transaction.borrower.full_name }} ({{ transaction.borrower.role }})</td>
+                            <td>{{ transaction.borrow_date|date:"M d, Y" }}</td>
+                            <td>
+                                {% now "U" as current_time %}
+                                {% with transaction.borrow_date.timestamp as borrow_time %}
+                                    {{ current_time|add:borrow_time|floatformat:0|add:"-86400"|floatformat:0 }} days
+                                {% endwith %}
+                            </td>
+                  <td>
+    {% if user.role == 'Admin' or user.role == 'Secretary' or transaction.borrower == user %}
+        <form method="POST" action="{% url 'return_record' transaction.transaction_id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-edit" onclick="return confirm('Mark as returned?')">
+                ✅ Return
+            </button>
+        </form>
+    {% else %}
+        <span style="color: #999;">-</span>
+    {% endif %}
+</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="no-results">No active borrowings.</p>
+                {% endif %}
+            </div>
+            
+            <!-- AVAILABLE TO BORROW SECTION -->
+            <div class="results-container">
+                <h3> Available to Borrow ({{ available_records.count }})</h3>
+                
+                {% if available_records %}
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>File Code</th>
+                            <th>Course Code</th>
+                            <th>Course Name</th>
+                            <th>Lecturer</th>
+                            <th>Type</th>
+                            <th>Location</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in available_records %}
+                        <tr>
+                            <td><strong>{{ record.file_code }}</strong></td>
+                            <td>{{ record.course_code }}</td>
+                            <td>{{ record.course_name }}</td>
+                            <td>{{ record.lecturer_name }}</td>
+                            <td>{{ record.document_type }}</td>
+                            <td>{{ record.physical_location.full_location_code }}</td>
+                            <td>
+                                <form method="POST" action="{% url 'borrow_record' record.record_id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-view" onclick="return confirm('Borrow {{ record.file_code }}?')">
+                                        📤 Borrow
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="no-results">No records available to borrow.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+    
+    {% include 'archive/base_footer.html' %}
+</body>
+</html>

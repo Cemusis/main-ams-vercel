@@ -1,0 +1,167 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - Archive Management System</title>
+    <link rel="stylesheet" href="{% static 'archive/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/search.css' %}">
+</head>
+<body class="home-page">
+    <header class="header">
+        <div class="logo-text">AMS</div>
+        <div class="user-info">
+            <span>{{ user.full_name }} ({{ user.role }})</span>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <aside class="sidebar">
+            <nav>
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+                <a href="{% url 'search' %}" class="nav-link">Search</a>
+                <a href="{% url 'view_all_records' %}" class="nav-link">All archive records</a>
+                <a href="{% url 'add_record' %}" class="nav-link">Add Record</a>
+                <a href="{% url 'borrow_return' %}" class="nav-link">Borrow/Return</a>
+                <a href="{% url 'manage_users' %}" class="nav-link active">Manage Users</a>
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <h2>User Management</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                        <button class="close-alert" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Add New User Form -->
+            <div class="search-container" style="margin-bottom: 30px;">
+                <h3>Add New User</h3>
+                <form method="POST" action="{% url 'add_user' %}">
+                    {% csrf_token %}
+                    <div class="search-row">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" name="full_name" required class="input-field" placeholder="John Doe">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" name="email" required class="input-field" placeholder="user@example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Role *</label>
+                            <select name="role" required class="input-field">
+                                <option value="Lecturer">Lecturer</option>
+                                <option value="Secretary">Secretary</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="search-row">
+                        <div class="form-group">
+                            <label>Password *</label>
+                            <input type="password" name="password" required class="input-field" placeholder="Minimum 6 characters">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Confirm Password *</label>
+                            <input type="password" name="password_confirm" required class="input-field" placeholder="Re-enter password">
+                        </div>
+                        
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="submit" class="btn-search"> Add User</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- All Users List -->
+            <div class="results-container">
+                <h3>All Users ({{ users.count }})</h3>
+                
+                {% if users %}
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Full Name</th>
+                            <th>Role</th>
+                            <th>Created At</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td><strong>{{ u.email }}</strong></td>
+                            <td>{{ u.full_name }}</td>
+                            <td>
+                                <span class="status-badge 
+                                    {% if u.role == 'Admin' %}status-archived
+                                    {% elif u.role == 'Secretary' %}status-borrowed
+                                    {% else %}status-available{% endif %}">
+                                    {{ u.role }}
+                                </span>
+                            </td>
+                            <td>{{ u.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if u.is_active %}
+                                    <span class="status-badge status-available">Active</span>
+                                {% else %}
+                                    <span class="status-badge status-archived">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="action-buttons">
+                                {% if u.email != user.email %}
+                                    {% if u.is_active %}
+                                        <form method="POST" action="{% url 'deactivate_user' u.email %}" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-delete" onclick="return confirm('Deactivate {{ u.full_name }}?')">
+                                                Deactivate
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form method="POST" action="{% url 'activate_user' u.email %}" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-edit" onclick="return confirm('Activate {{ u.full_name }}?')">
+                                                Activate
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                    <form method="POST" action="{% url 'reset_password' u.email %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-view" onclick="return confirm('Reset password for {{ u.full_name }}? New password will be: password123')">
+                                            Reset Password
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span style="color: #999; font-size: 12px;">Current User</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="no-results">No users found.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+    
+    {% include 'archive/base_footer.html' %}
+</body>
+</html>

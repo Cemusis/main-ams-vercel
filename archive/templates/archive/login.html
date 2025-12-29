@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Archive Management System</title>
+    <link rel="stylesheet" href="{% static 'archive/css/style.css' %}">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo-container">
+                <img src="{% static 'archive/images/logo.jpg' %}" alt="AMS Logo" class="logo-image">
+            </div>
+            
+            
+            <h1>Archive Management System</h1>
+            <p class="subtitle">Secure Login Portal</p>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="POST" id="loginForm">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="Email" required class="input-field">
+                </div>
+                
+                <div class="form-group password-group">
+                    <input type="password" name="password" id="password" placeholder="Password" required class="input-field">
+                    <span class="toggle-password" id="togglePassword"></span>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" name="remember">
+                        Remember me
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+        </div>
+    </div>
+    
+    {% include 'archive/base_footer.html' %}
+    
+    <script src="{% static 'archive/js/login.js' %}"></script>
+</body>
+</html>

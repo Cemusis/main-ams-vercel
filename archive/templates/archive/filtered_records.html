@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ filter_title }} - Archive Management System</title>
+    <link rel="stylesheet" href="{% static 'archive/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/search.css' %}">
+</head>
+<body class="home-page">
+    <header class="header">
+        <div class="logo-text"> AMS</div>
+        <div class="user-info">
+            <span>{{ user.full_name }} ({{ user.role }})</span>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <aside class="sidebar">
+            <nav>
+                <a href="{% url 'home' %}" class="nav-link"> Home</a>
+                <a href="{% url 'search' %}" class="nav-link"> Search</a>
+                <a href="{% url 'view_all_records' %}" class="nav-link"> All archive records</a>
+                
+                {% if user.role == 'Admin' or user.role == 'Secretary' %}
+                    <a href="{% url 'add_record' %}" class="nav-link"> Add Record</a>
+                {% endif %}
+                
+                <a href="{% url 'borrow_return' %}" class="nav-link"> Borrow/Return</a>
+                
+                {% if user.role == 'Admin' %}
+                    <a href="{% url 'manage_users' %}" class="nav-link"> Manage Users</a>
+                {% endif %}
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <h2>{{ filter_title }}</h2>
+            
+            <div class="results-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Total: {{ records.count }} record(s)</h3>
+                    <a href="{% url 'home' %}" class="btn-back">← Back to Dashboard</a>
+                </div>
+                
+                {% if records %}
+                <table class="results-table">
+<thead>
+    <tr>
+        <th>File Code</th>
+        <th>Course</th>
+        <th>Course Name</th>
+        <th>Lecturer</th>
+        <th>Year</th>
+        <th>Semester</th>
+        <th>Type</th>
+        <th>Status</th>
+        {% if filter_title == 'Active Borrowings' %}
+            <th>Borrowed By</th>
+            <th>Borrowed Date</th>
+        {% else %}
+            <th>Location</th>
+        {% endif %}
+        <th>Actions</th>
+    </tr>
+</thead>
+<tbody>
+    {% for record in records %}
+    <tr>
+        <td><strong>{{ record.file_code }}</strong></td>
+        <td>{{ record.course_code }}</td>
+        <td>{{ record.course_name }}</td>
+        <td>{{ record.lecturer_name }}</td>
+        <td>{{ record.academic_year }}</td>
+        <td>{{ record.semester }}</td>
+        <td>{{ record.document_type }}</td>
+        <td>
+            <span class="status-badge status-{{ record.status|lower }}">
+                {{ record.status }}
+            </span>
+        </td>
+        {% if filter_title == 'Active Borrowings' %}
+            <td>
+                {% with record.borrowtransaction_set.all|first as transaction %}
+                    {% if transaction %}
+                        {{ transaction.borrower.full_name }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                {% endwith %}
+            </td>
+            <td>
+                {% with record.borrowtransaction_set.all|first as transaction %}
+                    {% if transaction %}
+                        {{ transaction.borrow_date|date:"M d, Y" }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                {% endwith %}
+            </td>
+        {% else %}
+            <td>{{ record.physical_location.full_location_code }}</td>
+        {% endif %}
+        <td class="action-buttons">
+            <a href="{% url 'view_record' record.record_id %}" class="btn-view"> View</a>
+            
+            {% if user.role == 'Admin' or user.role == 'Secretary' %}
+                <a href="{% url 'edit_record' record.record_id %}" class="btn-edit"> Edit</a>
+                <a href="{% url 'delete_record' record.record_id %}" 
+                   class="btn-delete" 
+                   onclick="return confirm('Delete {{ record.file_code }}?')">
+                    Delete
+                </a>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+                </table>
+                {% else %}
+                <p class="no-results">No records found for this filter.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+    
+    {% include 'archive/base_footer.html' %}
+</body>
+</html>

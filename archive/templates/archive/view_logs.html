@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logs - Archive Management System</title>
+    <link rel="stylesheet" href="{% static 'archive/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'archive/css/search.css' %}">
+</head>
+<body class="home-page">
+    <header class="header">
+        <div class="logo-text"> AMS</div>
+        <div class="user-info">
+            <span>{{ user.full_name }} ({{ user.role }})</span>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <aside class="sidebar">
+            <nav>
+                <a href="{% url 'home' %}" class="nav-link"> Home</a>
+                <a href="{% url 'search' %}" class="nav-link"> Search</a>
+                <a href="{% url 'view_all_records' %}" class="nav-link"> All archive records</a>
+                <a href="{% url 'add_record' %}" class="nav-link"> Add Record</a>
+                <a href="{% url 'borrow_return' %}" class="nav-link"> Borrow/Return</a>
+                <a href="{% url 'manage_users' %}" class="nav-link"> Manage Users</a>
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <h2>System Activity Logs (Last 30 Days)</h2>
+            
+            <div class="results-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Total Activities: {{ logs.count }}</h3>
+                    <a href="{% url 'home' %}" class="btn-back">← Back to Dashboard</a>
+                </div>
+                
+                {% if logs %}
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                            <th>Table</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp|date:"M d, Y - g:i A" }}</td>
+                            <td>{{ log.user.full_name }}</td>
+                            <td>{{ log.user.role }}</td>
+                            <td>
+                                <span class="status-badge 
+                                    {% if log.action_type == 'Create' %}status-available
+                                    {% elif log.action_type == 'Update' %}status-borrowed
+                                    {% elif log.action_type == 'Delete' %}status-archived
+                                    {% elif log.action_type == 'Login' %}status-available
+                                    {% elif log.action_type == 'Logout' %}status-archived
+                                    {% elif log.action_type == 'Borrow' %}status-borrowed
+                                    {% elif log.action_type == 'Return' %}status-available
+                                    {% endif %}">
+                                    {{ log.action_type }}
+                                </span>
+                            </td>
+                            <td>{{ log.table_affected }}</td>
+                            <td>{{ log.details }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="no-results">No activity logs found in the last 30 days.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+    
+    {% include 'archive/base_footer.html' %}
+</body>
+</html>
+```
